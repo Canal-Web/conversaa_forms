@@ -1,0 +1,41 @@
+<?php 
+
+function conversaa_form_admin() {
+  $form = array();
+
+  $form['conversaa_forms'] = array(
+    '#type' => 'textarea',
+    '#title' => t("Formulaires à tagguer"),
+    '#attributes' =>array('placeholder' => t('{"form-id":{"fields":{"email":"email"}}}')),
+    '#default_value' => variable_get('conversaa_forms', ''),
+    '#description' => t("Entrez un object JSON avec l'ID du formulaire et les champs à récupérer"),
+    '#multiple' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
+
+
+function conversaa_form_menu() {
+
+  $items = array();
+
+  $items['admin/settings/conversaa/forms'] = array(
+    'title' => 'Conversaa forms',
+    'description' => 'Sert à configurer les formulaires à tracker par conversaa',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('conversaa_form_admin'),
+    'access arguments' => array('administer conversaa settings'),
+    // 'type' => MENU_NORMAL_ITEM,
+   );
+
+  return $items;
+}
+
+function conversaa_form_init()
+{
+  if(variable_get('conversaa_forms')){
+    $forms = json_decode(variable_get('conversaa_forms'));
+    drupal_add_js(array('conversaa_form' => array('forms' => $forms)), array('type' => 'setting'));
+  } 
+}

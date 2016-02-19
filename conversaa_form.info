@@ -1,0 +1,7 @@
+name = Conversaa Form
+description = Gestion des tags des formulaires avec Conversaa
+package = "Conversaa"
+core = 7.x
+configure = admin/settings/conversaa/forms
+dependencies[] = conversaa
+scripts[] = "js/form-tracking.js"
