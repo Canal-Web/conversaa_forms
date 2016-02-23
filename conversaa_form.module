@@ -1,18 +1,88 @@
 <?php 
 
-function conversaa_form_admin() {
+/**
+ * Configuration form listing the tracked forms
+ */
+function conversaa_form_admin($form, &$form_state) {
   $form = array();
+  $form['#tree'] = TRUE;
 
-  $form['conversaa_forms'] = array(
-    '#type' => 'textarea',
-    '#title' => t("Formulaires à tagguer"),
-    '#attributes' =>array('placeholder' => t('{"form-id":{"fields":{"email":"email"}}}')),
-    '#default_value' => variable_get('conversaa_forms', ''),
-    '#description' => t("Entrez un object JSON avec l'ID du formulaire et les champs à récupérer"),
-    '#multiple' => TRUE,
+  $form['description'] = array(
+    '#type' => 'item',
+    '#title' => t('La liste des formulaires à tracker sur le site.'),
+  );
+  $conversaa_form = variable_get('conversaa_form');
+
+
+  if (empty($form_state['num_forms'])) {
+    $form_state['num_forms'] = 1;
+    if(count($conversaa_form))
+      $form_state['num_forms'] = count($conversaa_form);
+  }
+
+
+  for ($i = 1; $i <= $form_state['num_forms']; $i++) {
+
+    $form_name = (isset($conversaa_form[$i]['name'])) ? $conversaa_form[$i]['name'] : '';
+    $fields = (isset($conversaa_form[$i]['tracked_fields'])) ? $conversaa_form[$i]['tracked_fields'] : '';
+
+    $form['conversaa_form'][$i] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Formulaire n°@numero', array('@numero' => $i)),
+      '#collapsible' => FALSE,
+    );
+
+    $form['conversaa_form'][$i]['name'] = array(
+      '#type' => 'textfield',
+      '#title' => t("ID du formulaire"),
+      '#default_value' => $form_name,
+      '#description' => t("Entrez l'ID du formulaire sans le # au début."),
+    );
+
+    $form['conversaa_form'][$i]['tracked_fields'] = array(
+      '#type' => 'textarea',
+      '#title' => t("Champs à tracker"),
+      '#attributes' => array('placeholder' => '"email":"mail",'),
+      '#default_value' => $fields,
+      '#description' => t("Entrez le nom de l'alias dans Conversaa et le nom du champ séparés par  : comme ci-dessus. Un champ par ligne, chaque ligne finissant par une virgule, sauf  la dernière."),
+    );
+  }
+
+  $form['add_form'] = array(
+    '#type' => 'submit',
+    '#value' => t('Ajouter un nouveau formulaire'),
+    '#submit' => array('conversaa_form_add_form'),
   );
 
+  if ($form_state['num_forms'] > 1) {
+    $form['remove_form'] = array(
+      '#type' => 'submit',
+      '#value' => t('Retirer le dernier formulaire'),
+      '#submit' => array('conversaa_form_remove_form'),
+      '#limit_validation_errors' => array(),
+    );
+  }
   return system_settings_form($form);
+}
+
+/**
+ * Submit handler for adding a new form fieldset
+ */
+function conversaa_form_add_form($form, &$form_state) {
+  $form_state['num_forms']++;
+  $form_state['rebuild'] = TRUE;
+}
+/**
+ * Submit handler for removing the last form fieldset and the matching variable
+ */
+function conversaa_form_remove_form($form, &$form_state) {
+  if ($form_state['num_forms'] > 1) {
+    $form_state['num_forms']--;
+    $var = variable_get('conversaa_form');
+    unset($var[$form_state['num_forms']]);
+    variable_set('conversaa_form', $var);
+  }
+  $form_state['rebuild'] = TRUE;
 }
 
 
@@ -32,10 +102,26 @@ function conversaa_form_menu() {
   return $items;
 }
 
+/**
+ * Generate a json object passing the forms to be tracked
+ */
 function conversaa_form_init()
 {
-  if(variable_get('conversaa_forms')){
-    $forms = json_decode(variable_get('conversaa_forms'));
+  if(variable_get('conversaa_form')){
+    $forms = variable_get('conversaa_form');
+    $forms_json = '{';
+
+    foreach ($forms as $key => $form) {
+      $forms_json .= '"'.$form['name'].'":{
+        "fields":{
+          '.$form['tracked_fields'].'
+        }}';
+      $forms_json .= (count($forms) == $key)? '' : ',';
+    }
+
+    $forms_json .= '}';
+    $forms = json_decode($forms_json);
+
     drupal_add_js(array('conversaa_form' => array('forms' => $forms)), array('type' => 'setting'));
   } 
 }
