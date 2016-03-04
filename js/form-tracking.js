@@ -4,7 +4,6 @@ jQuery(document).ready(function($) {
 		$('form').on('submit', function(event) {
 			var formId = $(this).attr('id');
 			if(forms.hasOwnProperty(formId)){
-			console.log('yes');
 				var tracking = $.conversaaPixel();
 				var values = '';
 				$.each(forms[formId]['fields'], function(index, val) {
