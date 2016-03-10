@@ -1,7 +1,8 @@
 jQuery(document).ready(function($) {
-	var forms = Drupal.settings.conversaa_form.forms;
-	if(forms){
+	var forms = (Drupal.settings.conversaa_form.forms != undefined)? Drupal.settings.conversaa_form.forms : '';
+	if(forms != ''){
 		$('form').on('submit', function(event) {
+			event.preventDefault();
 			var formId = $(this).attr('id');
 			if(forms.hasOwnProperty(formId)){
 				var tracking = $.conversaaPixel();
@@ -10,7 +11,11 @@ jQuery(document).ready(function($) {
 					values += '&'+index+'='+encodeURIComponent($("[name='"+val+"']").val());
 				});
 				tracking += values;
-				$('body').append('<img src="'+tracking+'" />');
+				$('body').append('<img src="'+tracking+'" />', function(){
+					$(this).submit();
+				});
+			}else{
+				$(this).submit();
 			}
 		});
 	}
